@@ -113,7 +113,9 @@ server.unifiedServer = (req, res) => {
 
 // Define a request router
 server.router = {
-  test: handlers.test
+    test: handlers.test,
+    users: handlers.users,
+    tokens: handlers.tokens
 };
 
 // Init Script
