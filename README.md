@@ -2,7 +2,8 @@
 Pizza Delivery App
 
 ## Features
-1. New users can be created, their information can be edited, and they can be deleted. Sample user object
+1. New users can be created, their information can be edited, and they can be deleted. 
+   Sample user object:
 ```
         {
             "firstName": "string",
@@ -17,6 +18,17 @@ Pizza Delivery App
 
 2. Users can log in and log out by creating or destroying a token.
 
+3. An admin can update a users admin status and create a menu item.
+   Sample menu item object:
+```
+        {
+                "name": "Hawaiian",
+                "ingredients": ["hand-torn ham", "pineapple"],
+                "image": "https://www.thespruceeats.com/thmb/N9TPXNal0e0AhNkvd2qJ457PHgE=/960x0/filters:no_upscale():max_bytes(150000):strip_icc()/IMG_4618fhor-a98bebf4c7e743a8bbfd6071b5dafc12.jpg",
+                "price": 5
+        }
+```
+
 3. A logged-in user can GET all the possible menu items (these items can be hardcoded into the system).
 
 4. A logged-in user can fill a shopping cart with menu items
@@ -28,7 +40,7 @@ Pizza Delivery App
 
 6. When an order is placed, the user recieves an email which contains thier receipt.
 ```@Todo
-        YIntegration with Mailgun.com sandbox. Note: Every Mailgun account comes with a sandbox email account domain (whatever@sandbox123.mailgun.org) that you can send from by default. So, there's no need to setup any DNS for your domain for this task https://documentation.mailgun.com/en/latest/faqs.html#how-do-i-pick-a-domain-name-for-my-mailgun-account
+        Integration with Mailgun.com sandbox. Note: Every Mailgun account comes with a sandbox email account domain (whatever@sandbox123.mailgun.org) that you can send from by default. So, there's no need to setup any DNS for your domain for this task https://documentation.mailgun.com/en/latest/faqs.html#how-do-i-pick-a-domain-name-for-my-mailgun-account
 ```
 
 ## Set up SSL certificates

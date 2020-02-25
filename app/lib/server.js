@@ -10,7 +10,7 @@ const url = require('url');
 const StringDecoder = require('string_decoder').StringDecoder;
 const config = require('./config');
 const fs = require('fs');
-const handlers = require('./handlers');
+const handlers = require('./handlers/index');
 const helpers = require('./helpers');
 const path = require('path');
 const util = require('util');
@@ -66,7 +66,7 @@ server.unifiedServer = (req, res) => {
 
     // Choose the handler this request should go to
     const chosenHandler =
-      typeof server.router[trimmedPath] !== 'undefined'
+      trimmedPath in server.router
         ? server.router[trimmedPath]
         : handlers.notFound;
 
@@ -113,9 +113,9 @@ server.unifiedServer = (req, res) => {
 
 // Define a request router
 server.router = {
-    test: handlers.test,
-    users: handlers.users,
-    tokens: handlers.tokens
+  users: handlers.users,
+  admin: handlers.admin,
+  tokens: handlers.tokens
 };
 
 // Init Script
