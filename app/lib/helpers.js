@@ -56,13 +56,13 @@ const Helpers = {
     },
 
     //Verify if a given token id is currently valid for a given user
-    verifyToken (id, phone, callback) {
+    verifyToken (id, email, callback) {
         //Lookup the token
         const dir = 'tokens'
         read(dir, id, (err, tokenData) => {
         if (!err && tokenData) {
             // Check that the token is for the given user and has not expired
-            if (tokenData.phone == phone && tokenData.expires > Date.now()) {
+            if (tokenData.email == email && tokenData.expires > Date.now()) {
             callback(tokenData);
             } else {
             callback(false);

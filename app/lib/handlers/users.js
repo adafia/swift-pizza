@@ -40,7 +40,7 @@ users.post = (data, callback) => {
 
     if (result == true) {
         // Make sure that the user doesnt already exist
-        read('users', userInput.phone, (err, data) => {
+        read('users', userInput.email, (err, data) => {
             if (err) {
                 // Hash the password
                 const hashedPassword = hash(userInput.password);
@@ -59,9 +59,10 @@ users.post = (data, callback) => {
                     };
 
                     // Store the user
-                    create('users', userInput.phone, userObject, err => {
+                    create('users', userInput.email, userObject, err => {
                       if (!err) {
-                        callback(200);
+                        delete userObject.hashedPassword  
+                        callback(200, { Message: 'User account has been created successfully', userObject });
                       } else {
                         console.log(err);
                         callback(500, {
@@ -75,7 +76,7 @@ users.post = (data, callback) => {
             } else {
                 // user already exists
                 callback(400, {
-                    Error: 'A user with that phone number already exists'
+                    Error: 'A user with that email address already exists'
                 });
             }
         });
@@ -89,26 +90,25 @@ users.post = (data, callback) => {
 // Optional data: none
 users.get = (data, callback) => {
     // check that the phone number is valid
-    const phone =
-        typeof data.queryStringObject.phone == 'string' &&
-            data.queryStringObject.phone.trim().length > 10
-            ? data.queryStringObject.phone.trim()
+    const email =
+        typeof data.queryStringObject.email == 'string' &&
+            data.queryStringObject.email.trim().length > 10
+            ? data.queryStringObject.email.trim()
             : false;
-    if (phone) {
+    if (email) {
         // Get the token from the headers
-        const token =
-            typeof data.headers.token == 'string' ? data.headers.token : false;
+        const token = typeof data.headers.token == 'string' ? data.headers.token : false;
         // verify that the given token from headers is valid for the phone number
-        verifyToken(token, phone, tokenData => {
+        verifyToken(token, email, tokenData => {
             if (typeof tokenData == 'object') {
                 // Look up the user
-                read('users', phone, (err, data) => {
+                read('users', email, (err, data) => {
                     if (!err && data) {
                         // Remove the hashed password from the user object before returning it
                         delete data.hashedPassword;
                         callback(200, data);
                     } else {
-                        callback(404);
+                        callback(404, { Error: `User with email: ${email}, does not exist` });
                     }
                 });
             } else
@@ -117,7 +117,7 @@ users.get = (data, callback) => {
                 });
         });
     } else {
-        callback(400, { Error: 'Missing required field' });
+        callback(400, { Error: 'Please provide your email to retrieve your account' });
     }
 };
 
@@ -138,12 +138,12 @@ users.put = (data, callback) => {
     // Get the token from the headers
     const token = typeof data.headers.token == 'string' ? data.headers.token : false;
 
-    if (userInput.phone && userInput.phone.trim().length > 0) {
+    if (userInput.email && userInput.email.trim().length > 0) {
         // verify that the given token from headers is valid for the phone number
-        verifyToken(token, userInput.phone, (tokenData) => {
+        verifyToken(token, userInput.email, (tokenData) => {
             if (typeof tokenData == 'object') {
                 // Look up the user
-                read('users', userInput.phone, (err, userData) => {
+                read('users', userInput.email, (err, userData) => {
                 if (!err && userData) {
                     // update the fields necessary
                     userData.firstName = userInput.firstName && userInput.firstName.trim().length > 0 ? userInput.firstName : userData.firstName
@@ -153,9 +153,10 @@ users.put = (data, callback) => {
                     userData.address = userInput.address && userInput.address.trim().length > 0 ? userInput.address : userData.address
                     userData.password = userInput.password && userInput.password.trim().length > 0 ? userInput.password : userData.password
                     // Save the new updates
-                    update('users', userData.phone, userData, err => {
+                    update('users', userData.email, userData, err => {
                       if (!err) {
-                        callback(200);
+                        delete userData.hashedPassword;  
+                        callback(200, { Message: 'User account has been updated successfully', userData });
                       } else {
                         console.log(err);
                         callback(500, { Error: 'Could not update user' });
@@ -172,7 +173,7 @@ users.put = (data, callback) => {
             }
         });
     } else {
-        callback(400, { Error: 'Your phone number is required to update your profile' });
+        callback(400, { Error: 'Your email address is required to update your profile' });
     }
 };
 
@@ -180,58 +181,34 @@ users.put = (data, callback) => {
 // Required data: phone
 users.delete = (data, callback) => {
     // Check the validity of the phone number
-    const phone =
-        typeof data.queryStringObject.phone == 'string' &&
-            data.queryStringObject.phone.trim().length > 10
-            ? data.queryStringObject.phone.trim()
+    const email =
+        typeof data.queryStringObject.email == 'string' &&
+            data.queryStringObject.email.trim().length > 10
+            ? data.queryStringObject.email.trim()
             : false;
-    if (phone) {
+    if (email) {
         // Get the token from the headers
         const token = typeof data.headers.token == 'string' ? data.headers.token : false;
         // verify that the given token from headers is valid for the phone number
-        verifyToken(token, phone, tokenData => {
+        verifyToken(token, email, tokenData => {
             if (typeof tokenData == 'object') {
                 // Look up the user
-                read('users', phone, (err, userData) => {
+                read('users', email, (err, userData) => {
                     if (!err && userData) {
-                        destroy('users', phone, err => {
-                            if (!err) {
-                                // Delete each of the checks associated with the user
-                                const userChecks =
-                                    typeof userData.checks == 'object' &&
-                                        userData.checks instanceof Array
-                                        ? userData.checks
-                                        : [];
-                                const checksToDelete = userChecks.length;
-                                if (checksToDelete > 0) {
-                                    let checksDeleted = 0;
-                                    let deletionErrors = false;
-                                    // Loop through the checks
-                                    userChecks.forEach(checkId => {
-                                        // Delete the Check
-                                        destroy('checks', checkId, err => {
-                                            if (!err) {
-                                                deletionErrors = true;
-                                            }
-                                            checksDeleted++;
-                                            if (checksDeleted == checksToDelete) {
-                                                if (!deletionErrors) {
-                                                    callback(200);
-                                                } else {
-                                                    callback(500, {
-                                                        Error:
-                                                            'Errors encountered while attempting to delete checks'
-                                                    });
-                                                }
-                                            }
-                                        });
-                                    });
-                                } else {
-                                    callback(200);
-                                }
-                            } else {
-                                callback(500, { Error: 'Could not delete the specified user' });
-                            }
+                        destroy('users', email, err => {
+                          if (!err) {
+                            destroy('tokens', token, err => {
+                              if (!err) {
+                                callback(200, { Message: `User with email: ${email}, has been deleted successfully` });
+                              } else {
+                                callback(500, { Error: 'Could not delete the specified token' });
+                              }
+                            });
+                          } else {
+                            callback(500, {
+                              Error: 'Could not delete the specified user'
+                            });
+                          }
                         });
                     } else {
                         callback(400, { Error: 'Could not find the specified user' });

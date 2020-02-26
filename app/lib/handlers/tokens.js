@@ -4,7 +4,7 @@
  */
 
 // Dependencies
-const _data = require('../data');
+const { read, create, update, destroy } = require('../data');
 const helpers = require('../helpers');
 
 // Define the Tokens
@@ -24,10 +24,10 @@ tokens = (data, callback) => {
 // Required data: phone, password
 // Optional data: none
 tokens.post = (data, callback) => {
-    const phone =
-        typeof data.payload.phone == 'string' &&
-            data.payload.phone.trim().length > 10
-            ? data.payload.phone.trim()
+    const email =
+        typeof data.payload.email == 'string' &&
+            data.payload.email.trim().length > 10
+            ? data.payload.email.trim()
             : false;
     const password =
         typeof data.payload.password == 'string' &&
@@ -35,9 +35,9 @@ tokens.post = (data, callback) => {
             ? data.payload.password.trim()
             : false;
 
-    if (phone && password) {
-        // Lookup the user who matches that phone number
-        _data.read('users', phone, (err, userData) => {
+    if (email && password) {
+        // Lookup the user who matches that email address
+        read('users', email, (err, userData) => {
             if (!err && userData) {
                 // Hash the sent password, and compare it to the password stored in the user object
                 const hashedPassword = helpers.hash(password);
@@ -46,14 +46,14 @@ tokens.post = (data, callback) => {
                     const tokenId = helpers.createRandomString(20);
                     const expires = Date.now() + 1000 * 60 * 60;
                     const tokenObject = {
-                        phone: phone,
+                        email: email,
                         id: tokenId,
                         isAdmin: userData.isAdmin,
                         expires: expires
                     };
 
                     // Store the token
-                    _data.create('tokens', tokenId, tokenObject, err => {
+                    create('tokens', tokenId, tokenObject, err => {
                         if (!err) {
                             callback(200, tokenObject);
                         } else {
@@ -84,7 +84,7 @@ tokens.get = (data, callback) => {
             : false;
     if (id) {
         // Look up the token
-        _data.read('tokens', id, (err, tokenData) => {
+        read('tokens', id, (err, tokenData) => {
             if (!err && tokenData) {
                 callback(200, tokenData);
             } else {
@@ -111,7 +111,7 @@ tokens.put = (data, callback) => {
 
     if (id && extend) {
         // look up the token
-        _data.read('tokens', id, (err, tokenData) => {
+        read('tokens', id, (err, tokenData) => {
             if (!err && tokenData) {
                 // Check to make sure the token isn't already expired
                 if (tokenData.expires > Date.now()) {
@@ -119,7 +119,7 @@ tokens.put = (data, callback) => {
                     tokenData.expires = Date.now() + 1000 * 60 * 60;
 
                     //Update the token
-                    _data.update('tokens', id, tokenData, err => {
+                    update('tokens', id, tokenData, err => {
                         if (!err) {
                             callback(200);
                         } else {
@@ -156,9 +156,9 @@ tokens.delete = (data, callback) => {
             : false;
     if (id) {
         // Look up the token
-        _data.read('tokens', id, (err, data) => {
+        read('tokens', id, (err, data) => {
             if (!err && data) {
-                _data.remove('tokens', id, err => {
+                destroy('tokens', id, err => {
                     if (!err) {
                         callback(200);
                     } else {
